@@ -9,6 +9,8 @@
   "author": "Evan Zlotnick",
   "license": "ISC",
   "dependencies": {
+    "forever": "^0.15.2",
+    "moment-timezone": "^0.5.4",
     "superagent": "^2.0.0"
   }
 }
