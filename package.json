@@ -9,7 +9,10 @@
   "author": "Evan Zlotnick",
   "license": "ISC",
   "dependencies": {
+    "body-parser": "^1.15.1",
+    "express": "^4.13.4",
     "forever": "^0.15.2",
+    "lodash": "^4.13.1",
     "moment-timezone": "^0.5.4",
     "superagent": "^2.0.0"
   }
