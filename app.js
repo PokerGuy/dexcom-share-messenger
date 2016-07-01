@@ -105,13 +105,14 @@ function keepPolling() {
             console.log('New value not available, waiting another 30 seconds');
             setTimeout(keepPolling, 30000);
             nextCall = new Date(now + 30000);
+            doUpdate('no data');
         } else {
             console.log('Last reading at ' + moment.tz(result.time, "America/Chicago").format());
             console.log(next + ' milliseconds until next call.');
             setTimeout(keepPolling, next);
             nextCall = new Date(now + next);
+            doUpdate('regular update');
         }
-        doUpdate();
     });
 }
 
@@ -146,7 +147,9 @@ function update(req, res) {
     res.writeHead(200, {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive'
+        'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no',
+        'Access-Control-Allow-Origin': '*'
     });
     res.write('\n');
     if (req.headers['last-event-id'] == eventId) {
@@ -165,13 +168,19 @@ function update(req, res) {
     })(++clientId)
 }
 
-function doUpdate() {
+function doUpdate(type) {
     eventId++;
+    var event;
     var last = new Date(lastEntry).toISOString();
+    if (type === 'regular update') {
+        event = "event: update\n";
+    }
+    if (type === 'no data') {
+        event = "event: nodata\n";
+    }
     for (clientId in clients) {
         clients[clientId].write("id: " + eventId + "\n");
-        clients[clientId].write("event: update\n");
+        clients[clientId].write(event);
         clients[clientId].write("data: " + "{\"glucose\": " + glucose + ", \"trend\": " + trend + ", \"lastEntry\": \"" + last + "\", \"next\": " + next + "} \n\n");
     }
-    ;
 }
