@@ -2,6 +2,7 @@ var request = require('superagent');
 var moment = require('moment-timezone');
 var express = require('express');
 var app = express();
+var crypto = require('crypto');
 var bodyParser = require('body-parser');
 var router = express.Router();
 var _ = require('lodash');
@@ -187,6 +188,11 @@ function doUpdate(type) {
 }
 
 function github(req, res) {
+    var getSHA1ofJSON = function(input){
+        return crypto.createHash('sha1').update(JSON.stringify(input)).digest('hex')
+    }
     console.log('Update from github.....');
-    console.log(req);
+    console.log(req.headers['X-Hub-Signature']);
+    console.log('Sha of password');
+    console.log(getSHA1ofJSON(password));
 }
