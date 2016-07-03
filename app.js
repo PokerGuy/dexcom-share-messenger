@@ -86,6 +86,7 @@ function start() {
     app.set('port', 3000);
     app.get('/', init);
     app.get('/update', update);
+    app.post('/github', github);
     var server = app.listen(app.get('port'), function () {
         console.log('Express server listening on port ' + server.address().port);
     });
@@ -183,4 +184,9 @@ function doUpdate(type) {
         clients[clientId].write(event);
         clients[clientId].write("data: " + "{\"glucose\": " + glucose + ", \"trend\": " + trend + ", \"lastEntry\": \"" + last + "\", \"next\": " + next + "} \n\n");
     }
+}
+
+function github(req, res) {
+    console.log('Update from github.....');
+    console.log(req);
 }
