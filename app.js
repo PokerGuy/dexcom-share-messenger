@@ -188,15 +188,18 @@ function doUpdate(type) {
 }
 
 function github(req, res) {
-    console.log(req.res);
-    console.log('is this the request body payload?');
-    console.log(req.res.client.body);
-    var body = JSON.parse(req.res.client.body);
-    var hash = crypto.createHmac('sha1', password).update(body).digest('hex');
-    console.log('Update from github headers.....');
-    console.log(req.headers['X-Hub-Signature']);
-    console.log('all headers');
-    console.log(req.headers);
-    console.log('hex from body encrypted with the password');
-    console.log(hash);
+    var
+        hmac,
+        calculatedSignature,
+        payload = req.body;
+
+    hmac = crypto.createHmac('sha1', password);
+    hmac.update(JSON.stringify(payload));
+    calculatedSignature = 'sha1=' + hmac.digest('hex');
+
+    if (req.headers['x-hub-signature'] === calculatedSignature) {
+        console.log('all good');
+    } else {
+        console.log('not good');
+    }
 }
