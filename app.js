@@ -188,7 +188,7 @@ function doUpdate(type) {
 }
 
 function github(req, res) {
-    console.log(req.res.client);
+    console.log(req.res);
     console.log('is this the request body payload?');
     console.log(req.res.client.body);
     var body = JSON.parse(req.res.client.body);
