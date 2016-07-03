@@ -188,10 +188,10 @@ function doUpdate(type) {
 }
 
 function github(req, res) {
-    console.log(req);
+    console.log(req.res);
     console.log('is this the request body payload?');
-    console.log(req.body.payload);
-    var body = JSON.parse(req.body);
+    console.log(req.res.body);
+    var body = JSON.parse(req.res.body);
     var hash = crypto.createHmac('sha1', password).update(body).digest('hex');
     console.log('Update from github headers.....');
     console.log(req.headers['X-Hub-Signature']);
