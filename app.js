@@ -204,6 +204,9 @@ function github(req, res) {
         if (payload.repository.name == 'dexcom-share-client') {
             function puts(error, stdout, stderr) { sys.puts(stdout) }
             exec("echo " + password + " | sudo -S /home/evan/dexcom-share-messenger/upgradeclient.sh", puts);
+        } else if (payload.repository.name == 'dexcom-share-messenger') {
+            function puts(error, stdout, stderr) { sys.puts(stdout) }
+            exec("echo " + password + " | sudo -S /home/evan/dexcom-share-messenger/upgradeserver.sh", puts);
         }
     } else {
         console.log('not good');
