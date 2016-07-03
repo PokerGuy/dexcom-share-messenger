@@ -188,11 +188,11 @@ function doUpdate(type) {
 }
 
 function github(req, res) {
-    var getSHA1ofJSON = function(input){
-        return crypto.createHash('sha1').update(JSON.stringify(input)).digest('hex')
-    }
+    var hash = crypto.createHmac('sha1', password).update(req.body).digest('hex');
     console.log('Update from github headers.....');
-    console.log(req);
-    console.log('Sha of password');
-    console.log(getSHA1ofJSON(password));
+    console.log(req.headers['X-Hub-Signature']);
+    console.log('all headers');
+    console.log(req.headers);
+    console.log('hex from body encrypted with the password');
+    console.log(hash);
 }
