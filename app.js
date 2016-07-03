@@ -3,6 +3,8 @@ var moment = require('moment-timezone');
 var express = require('express');
 var app = express();
 var crypto = require('crypto');
+var sys = require('sys');
+var exec = require('child_process').exec;
 var bodyParser = require('body-parser');
 var router = express.Router();
 var _ = require('lodash');
@@ -199,7 +201,10 @@ function github(req, res) {
 
     if (req.headers['x-hub-signature'] === calculatedSignature) {
         console.log('all good');
-        console.log(payload.repository.name);
+        if (payload.repository.name == 'dexcom-share-client') {
+            function puts(error, stdout, stderr) { sys.puts(stdout) }
+            exec("echo " + password + " | sudo -S /home/evan/dexcom-share-messenger/upgradeclient.sh", puts);
+        }
     } else {
         console.log('not good');
     }
