@@ -188,6 +188,9 @@ function doUpdate(type) {
 }
 
 function github(req, res) {
+    console.log(req);
+    console.log('is this the request body payload?');
+    console.log(req.body.payload);
     var body = JSON.parse(req.body);
     var hash = crypto.createHmac('sha1', password).update(body).digest('hex');
     console.log('Update from github headers.....');
