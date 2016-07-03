@@ -192,7 +192,7 @@ function github(req, res) {
         return crypto.createHash('sha1').update(JSON.stringify(input)).digest('hex')
     }
     console.log('Update from github headers.....');
-    console.log(req.headers);
+    console.log(req);
     console.log('Sha of password');
     console.log(getSHA1ofJSON(password));
 }
