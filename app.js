@@ -199,7 +199,7 @@ function github(req, res) {
 
     if (req.headers['x-hub-signature'] === calculatedSignature) {
         console.log('all good');
-        console.log(payload);
+        console.log(payload.repository.name);
     } else {
         console.log('not good');
     }
