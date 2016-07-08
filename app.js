@@ -8,6 +8,7 @@ var exec = require('child_process').exec;
 var bodyParser = require('body-parser');
 var router = express.Router();
 var _ = require('lodash');
+var mongoose = require('mongoose');
 var session;
 var nextCall;
 var glucose;
@@ -78,23 +79,35 @@ function relogin() {
 }
 
 function start() {
-    console.log('Starting Express');
-    app.use(bodyParser.json());
-    app.use(bodyParser.urlencoded({extended: true}));
-    app.use(function (req, res, next) {
-        console.log('Getting a request...');
-        res.header("Access-Control-Allow-Origin", "*");
-        res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-        next();
+    var options = { server: { socketOptions: { keepAlive: 300000, connectTimeoutMS: 30000 } },
+        replset: { socketOptions: { keepAlive: 300000, connectTimeoutMS : 30000 } } };
+
+    var mongodbUri = 'mongodb://ezlotnick:' + password + '@ds011374.mlab.com:11374/austintechblogger-dev';
+
+    mongoose.connect(mongodbUri, options);
+    var conn = mongoose.connection;
+
+    conn.on('error', console.error.bind(console, 'connection error:'));
+
+    conn.once('open', function() {
+        console.log('Connected to Mongo... Starting Express');
+        app.use(bodyParser.json());
+        app.use(bodyParser.urlencoded({extended: true}));
+        app.use(function (req, res, next) {
+            console.log('Getting a request...');
+            res.header("Access-Control-Allow-Origin", "*");
+            res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+            next();
+        });
+        app.set('port', 3000);
+        app.get('/', init);
+        app.get('/update', update);
+        app.post('/github', github);
+        var server = app.listen(app.get('port'), function () {
+            console.log('Express server listening on port ' + server.address().port);
+        });
+        keepPolling();
     });
-    app.set('port', 3000);
-    app.get('/', init);
-    app.get('/update', update);
-    app.post('/github', github);
-    var server = app.listen(app.get('port'), function () {
-        console.log('Express server listening on port ' + server.address().port);
-    });
-    keepPolling();
 }
 
 function keepPolling() {
