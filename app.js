@@ -9,6 +9,8 @@ var bodyParser = require('body-parser');
 var router = express.Router();
 var _ = require('lodash');
 var mongoose = require('mongoose');
+var auth = require('./auth');
+var Token = require('./models/token');
 var session;
 var nextCall;
 var glucose;
@@ -96,13 +98,17 @@ function start() {
         app.use(function (req, res, next) {
             console.log('Getting a request...');
             res.header("Access-Control-Allow-Origin", "*");
-            res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+            res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+            res.header("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE");
             next();
         });
         app.set('port', 3000);
         app.get('/', init);
         app.get('/update', update);
         app.post('/github', github);
+        app.get('/secure', auth.isAuthenticated, secureThing);
+        app.delete('/logout/:token', auth.isAuthenticated, logout);
+        app.post('/login', userLogin);
         var server = app.listen(app.get('port'), function () {
             console.log('Express server listening on port ' + server.address().port);
         });
@@ -215,6 +221,7 @@ function github(req, res) {
 
     if (req.headers['x-hub-signature'] === calculatedSignature) {
         console.log('all good');
+        res.status(200);
         if (payload.repository.name == 'dexcom-share-client') {
             function puts(error, stdout, stderr) { sys.puts(stdout) }
             exec("echo " + password + " | sudo -S /home/evan/dexcom-share-messenger/upgradeclient.sh", puts);
@@ -224,5 +231,31 @@ function github(req, res) {
         }
     } else {
         console.log('not good');
+        res.status(401).send({message: "unauthorized"});
     }
+}
+
+function secureThing(req, res) {
+    res.json({message: "O'tay!"});
+}
+
+function userLogin(req, res) {
+    if (req.body.password === password) {
+        Token.issueToken(function(t) {
+            res.json(t);
+        });
+    } else {
+        res.statusCode = 401;
+        res.send('Invalid password.');
+    }
+}
+
+function logout(req, res) {
+    Token.findOneAndRemove({'token': req.params.token}, function(err) {
+        if (!err) {
+            res.json({message: 'logged out'});
+        } else {
+            res.json({message: err});
+        }
+    })
 }
