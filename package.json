@@ -15,8 +15,11 @@
     "forever": "^0.15.2",
     "lodash": "^4.13.1",
     "moment-timezone": "^0.5.4",
+    "mongoose": "~4.5.3",
+    "node-uuid": "^1.4.7",
+    "passport": "^0.3.2",
+    "passport-http-bearer": "^1.0.1",
     "superagent": "^2.0.0",
-    "sys": "0.0.1",
-    "mongoose": "~4.5.3"
+    "sys": "0.0.1"
   }
 }
