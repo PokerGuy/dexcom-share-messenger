@@ -1,6 +1,7 @@
-var check = function(cb) {
+const env = require('env2')('./env.json');
+
+exports.check = function(cb) {
     var pass = true;
-    const env = require('env2')('./env.json');
     if (process.env.DEXCOM_USERNAME == undefined) {
         pass = false;
         console.log('Make sure your env.json has a defined DEXCOM_USERNAME');
@@ -15,5 +16,3 @@ var check = function(cb) {
     }
     return cb(pass);
 };
-
-module.exports.check = check;

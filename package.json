@@ -10,6 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.15.1",
+    "chai": "^3.5.0",
+    "chai-http": "^3.0.0",
     "crypto": "0.0.3",
     "env2": "^2.1.1",
     "express": "^4.13.4",
