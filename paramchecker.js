@@ -1,4 +1,4 @@
-const env = require('env2')('./env.json');
+require('dotenv').load();
 
 exports.check = function(cb) {
     var pass = true;

@@ -1,4 +1,5 @@
-const env = require('env2')('../env.json');
+require('dotenv').load();
+var sys = require('sys');
 var crypto = require('crypto');
 
 exports.update = function(req, res) {

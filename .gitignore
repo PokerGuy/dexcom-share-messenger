@@ -1,4 +1,4 @@
 .idea/*
 node_modules/*
 env.json
-tests/env.json
+.env

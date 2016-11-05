@@ -1,4 +1,4 @@
-const env = require('env2')('../env.json');
+require('dotenv').load();
 var Token = require('../models/token');
 
 exports.login = function(req, res) {
