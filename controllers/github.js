@@ -1,5 +1,6 @@
 require('dotenv').load();
 var sys = require('sys');
+var exec = require('child_process').exec;
 var crypto = require('crypto');
 
 exports.update = function(req, res) {
