@@ -10,6 +10,7 @@ var app = express();
 var token;
 
 chai.use(chaiHttp);
+
 describe('API Tests', function () {
     before(function (done) {
         var con = mongoose.connect(process.env.MONGO_URI);
