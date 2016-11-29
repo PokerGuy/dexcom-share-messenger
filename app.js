@@ -20,13 +20,16 @@ check.check(function (pass) {
     }
 });
 
-dexcom.login();
 var options = {
     server: {socketOptions: {keepAlive: 300000, connectTimeoutMS: 30000}},
     replset: {socketOptions: {keepAlive: 300000, connectTimeoutMS: 30000}}
 };
-
-mongoose.connect(process.env.MONGO_URI, options);
+if (process.env.NODE_ENV !== 'testing') {
+    //We establish a connection in the test to start with a clean database
+    //Also, all readings are simulated
+    dexcom.login();
+    mongoose.connect(process.env.MONGO_URI, options);
+}
 var conn = mongoose.connection;
 mongoose.Promise = global.Promise;
 

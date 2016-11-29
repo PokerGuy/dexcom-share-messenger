@@ -22,7 +22,6 @@ TokenSchema.statics.findToken = function (token, cb) {
                 if (!token) {
                     return cb(null, null, {message: 'Invalid token.'});
                 }
-                /*This works but it gets super annoying in development, uncomment out for the real deal} */
                 if ((Date.now() - token.lastUsed) / 1000 > (24 * 60 * 60)) { //24 hours, 60 minutes per hour, 60 seconds per minute
                     return cb(null, null, {message: 'Session timed out.'});
                 } else {

@@ -9,7 +9,7 @@ exports.login = function() {
     doLogin()
 };
 
-function doLogin() {
+function doLogin(cb) {
     request
         .post('https://share1.dexcom.com/ShareWebServices/Services/General/LoginPublisherAccountByName')
         .send({
@@ -25,7 +25,11 @@ function doLogin() {
                 console.log('Error');
                 console.log(err);
                 console.log('Response ');
-                console.log(res);
+                if (cb) {
+                    cb(err, res);
+                } else {
+                    relogin();
+                }
             } else {
                 session = res.body;
                 console.log('Success reaching dexcom');
@@ -87,8 +91,9 @@ function getGlucose(cb) {
 }
 
 function relogin() {
-    setTimeout(doLogin(function (result) { //this is causing the crash
-        if (result.status !== 200) {
+    setTimeout(doLogin(function (err, result) { //this is causing the crash
+        if (err) {
+            dexData.setTrend(15);
             setTimeout(relogin, 240000);
             //Notify the user somehow? Unable to get a login...
         } else {
