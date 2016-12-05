@@ -2,6 +2,7 @@ var mongoose = require('mongoose');
 var moment = require('moment-timezone');
 var minlength = [2, 'The value of path `{PATH}` (`{VALUE}`) is shorter than the minimum allowed length ({MINLENGTH}).'];
 var _ = require('lodash');
+var secureupdate = require('../controllers/secureupdate');
 
 var eventSchema = new mongoose.Schema({
     type: {
@@ -19,10 +20,14 @@ var eventSchema = new mongoose.Schema({
         required: true,
         enum: ['call', 'text', 'call/text']
     },
+    noDataTime: {
+        type: Number,
+        min: [300000, "Must be greater than five minutes"]
+    },
     repeat: {
         type: Number,
         required: true,
-        min: 300000
+        min: [300000, "Must be greater than five minutes"]
     }
 });
 
@@ -135,6 +140,14 @@ FollowerSchema.pre('save', function (next) {
         }
         next();
     }
+});
+
+FollowerSchema.post('save', function(doc) {
+    secureupdate.doUpdate('newfollower', doc);
+});
+
+FollowerSchema.post('remove', function(doc) {
+    secureupdate.doUpdate('deletefollower', {id: doc._id});
 });
 
 // Export the Mongoose model
