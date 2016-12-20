@@ -129,7 +129,7 @@ exports.sendMessages = function (date, glucose, trend, done) {
                                     client.makeCall({
                                             to: '+1' + toNotify.follower.phoneNumber.toString(),
                                             from: process.env.TWILIO_NUMBER,
-                                            url: 'https://www.thezlotnicks.com/twiml'
+                                            url: 'https://www.thezlotnicks.com/api/twiml'
                                         }, function (err, responseDate) {
                                             console.log(responseDate);
                                         }
