@@ -4,19 +4,15 @@ var lastEntry;
 var Token = require('../models/token');
 
 exports.setLastEntry = function(last) {
-    console.log(last);
     lastEntry = last;
 };
 
 exports.update = function(req, res) {
-    console.log('secure update called');
     var t = req.params.token;
     Token.findToken(t, function(err, token){
         if (!token) {
-            console.log('Denied!');
             res.sendStatus(401);
         } else {
-            console.log('OK');
             req.socket.setTimeout(0);
             res.writeHead(200, {
                 'Content-Type': 'text/event-stream',
@@ -36,7 +32,6 @@ exports.update = function(req, res) {
             (function (clientId) {
                 clients[clientId] = res;
                 req.on('close', function () {
-                    console.log('later skater');
                     delete clients[clientId]
                 });
             })(++clientId)
@@ -45,8 +40,6 @@ exports.update = function(req, res) {
 };
 
 exports.doUpdate = function(type, obj) {
-    console.log(obj);
-    console.log(JSON.stringify(obj));
     for (clientId in clients) {
         clients[clientId].write("id: " + new Date().getTime() + "\n");
         clients[clientId].write("event: " + type + "\n");

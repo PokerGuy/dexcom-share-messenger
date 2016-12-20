@@ -14,7 +14,6 @@ exports.update = function(req, res) {
     calculatedSignature = 'sha1=' + hmac.digest('hex');
 
     if (req.headers['x-hub-signature'] === calculatedSignature) {
-        console.log('all good starting pull for ' + payload.repository.name);
         res.status(200);
         if (payload.repository.name == 'dexcom-share-client') {
             function puts(error, stdout, stderr) {
@@ -30,7 +29,6 @@ exports.update = function(req, res) {
             exec("echo " + process.env.DEXCOM_PASSWORD + " | sudo -S /home/evan/dexcom-share-messenger/upgradeserver.sh", puts);
         }
     } else {
-        console.log('not good');
         res.status(401).send({message: "unauthorized"});
     }
 };

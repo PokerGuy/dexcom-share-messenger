@@ -1,8 +1,26 @@
 require('dotenv').load();
+var moment = require('moment-timezone');
 var Follower = require('../models/follower');
 
+function isNumber(n) {
+    return !isNaN(parseFloat(n)) && isFinite(n);
+}
+
 exports.create = function (req, res) {
-    Follower.create(req.body, function (err, f) {
+    //OK, I hate doing this because, you know, skinny controllers and fat models and stuff, but...
+    //I can't make the expirationDate a number cuz I want to be able to accept a string date from the UI or a curl
+    //And I need to cast that String to a number because stoopid Mongoose won't let me query a date
+    var follower = req.body;
+    if ('expirationDate' in follower) {
+        if (!isNumber(follower.expirationDate)) {
+            var exp = moment.tz(follower.expirationDate, process.env.TZ);
+            exp.add(1, 'day');
+            exp.set({hour: 23, minute: 59, second: 59});
+            follower.expirationDate = parseInt(exp.format('x'));
+        }
+    }
+
+    Follower.create(follower, function (err, f) {
         if (f) {
             res.json({follower: f});
         } else {

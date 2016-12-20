@@ -1,4 +1,4 @@
-var dotenv = require('dotenv').config({path: '/Users/ezlotnick/WebstormProjects/messenger/.env.testing'});
+var dotenv = require('dotenv').config({path: '/Users/evan/dexcom-share-messenger/.env.testing'});
 var chai = require('chai');
 var chaiHttp = require('chai-http');
 var server = require('../app');
@@ -13,6 +13,9 @@ var m = require('moment');
 var vacation = require('../models/vacation');
 var follower = require('../models/follower');
 var token = require('../models/token');
+var messenger = require('../messenger');
+var message = require('../models/message');
+var dex = require('../dexData');
 var validToken;
 var vacaId;
 var followerId;
@@ -21,8 +24,41 @@ var timebandId;
 var timebandId2;
 var timebandId3;
 var eventId;
+var nextNonHolidayMonday;
 
 chai.use(chaiHttp);
+
+var findNextNonHolidayMonday = function (startPoint, cb) {
+    if (startPoint.day() === 0) {
+        startPoint.add(1, 'day');
+    } else {
+        startPoint.add((8 - startPoint.day()), 'days');
+    }
+    console.log('After adding days its ' + startPoint.format());
+    // it's now next Monday, check to see if it's a holiday or keep iterating...
+    vacation.find({
+        startDate: {$gte: startPoint.unix()},
+        endDate: {$lte: startPoint.unix()}
+    }, function (err, v) {
+        console.log(v.length);
+        if (v.length === 0) {
+            console.log('next non holiday Monday is ' + startPoint.format());
+            //Create the very important Holiday 'Me Day' as the next Monday
+            var copy = startPoint;
+            var meDay = copy.add(7, 'days').utc();
+            vacation.create({
+                startDate: meDay.month() + 1 + '/' + meDay.date() + '/' + meDay.year(),
+                endDate: meDay.month() + 1 + '/' + meDay.date() + '/' + meDay.year(),
+                name: "Me Day!"
+            }, function (err, v) {
+                console.log(v);
+                cb(startPoint);
+            });
+        } else {
+            findNextNonHolidayMonday(startPoint);
+        }
+    });
+};
 
 describe('API Tests', function () {
     before(function (done) {
@@ -83,10 +119,52 @@ describe('API Tests', function () {
                     timebandId = f.timeBand[1]._id;
                     timebandId3 = f.timeBand[0]._id;
                     eventId = f.timeBand[0].event[0]._id;
-                })
+                });
+                follower.create({
+                    name: "Allan", phoneNumber: 5125551212, includeWeekendsAndHolidays: false, timeBand: [
+                        {
+                            startHour: 0,
+                            endHour: 6,
+                            event: [
+                                {
+                                    type: "low",
+                                    glucose: 80,
+                                    action: "call",
+                                    repeat: 900000
+                                },
+                                {
+                                    type: "high",
+                                    glucose: 250,
+                                    action: "text",
+                                    repeat: 900000
+                                }
+                            ]
+                        },
+                        {
+                            startHour: 6,
+                            endHour: 12,
+                            event: [
+                                {
+                                    type: "high",
+                                    glucose: 300,
+                                    action: "call",
+                                    repeat: 900000
+                                }
+                            ]
+                        }]
+                }, function (err, f) {
+                    console.log('Alan created');
+                });
             });
         });
-        done();
+        var today = new moment.tz(process.env.TZ);
+        console.log('Right now is ' + today.format());
+        today.set({hour: 6, minute: 0, second: 0, millisecond: 0}); //6 in the morning police at my door...
+        console.log(moment.tz(today, process.env.TZ).format('HH:mm'));
+        findNextNonHolidayMonday(today, function (nonHolidayMonday) {
+            nextNonHolidayMonday = nonHolidayMonday.add(-7, 'days');
+            done();
+        });
     });
 
     describe('Tokens', function () {
@@ -290,7 +368,7 @@ describe('API Tests', function () {
                 .end(function (err, res) {
                     res.should.have.status(200);
                     vacation.count(function (err, count) {
-                        count.should.equal(1);
+                        count.should.equal(2);
                         done();
                     })
                 })
@@ -388,7 +466,13 @@ describe('API Tests', function () {
                     timeBand: [{
                         startHour: 22,
                         endHour: 6,
-                        event: [{type: "low", glucose: 80, action: "call", repeat: 900000}]
+                        event: [
+                            {type: "low", glucose: 80, action: "call", repeat: 900000},
+                            {type: "high", glucose: 280, action: "call", repeat: 900000},
+                            {type: "double up", action: "call", repeat: 900000},
+                            {type: "double down", action: "call", repeat: 900000},
+                            {type: "no data", action: "call", noDataTime: 1800000, repeat: 1800000}
+                        ]
                     }]
                 })
                 .end(function (err, res) {
@@ -414,8 +498,8 @@ describe('API Tests', function () {
                 .end(function (err, res) {
                     res.should.have.status(200);
                     res.body.follower.includeWeekendsAndHolidays.should.equal(true);
-                    var expDate = new Date(res.body.follower.expirationDate);
-                    expDate.getYear().should.equal(8099);
+                    var expDate = new Date (parseInt(res.body.follower.expirationDate));
+                    expDate.getFullYear().should.equal(9999);
                     followerId2 = res.body.follower._id;
                     done();
                 })
@@ -579,7 +663,7 @@ describe('API Tests', function () {
                 .set('Authorization', 'Bearer ' + validToken)
                 .set('Content-type', 'application/json')
                 .send({
-                    name: 'Jenny',
+                    name: 'Laura',
                     phoneNumber: 2068675309,
                     expirationDate: strToday,
                     timeBand: [{
@@ -590,23 +674,124 @@ describe('API Tests', function () {
                 })
                 .end(function (err, res) {
                     res.should.have.status(200);
-                    var e = new Date(moment.tz(res.body.follower.expirationDate, process.env.TZ).format());
-                    e.getHours().should.equal(23);
-                    e.getMinutes().should.equal(59);
-                    e.getSeconds().should.equal(59);
+                    var e = moment.tz(parseInt(res.body.follower.expirationDate), process.env.TZ);
+                    e.get('hour').should.equal(23);
+                    e.get('minute').should.equal(59);
+                    e.get('second').should.equal(59);
                     done();
                 })
         });
-        it('Should return an array of followers on the index route', function(done) {
+        it('Should return an array of followers on the index route', function (done) {
             chai.request(server)
                 .get('/follower')
                 .set('Authorization', 'Bearer ' + validToken)
                 .set('Content-type', 'application/json')
-                .end(function (err,res) {
+                .end(function (err, res) {
                     res.should.have.status(200);
                     res.body.should.be.a('array');
                     done();
                 })
         })
     });
-})
+    /*
+     OK, at this point our followers look like:
+     { "_id" : ObjectId("5849fad175944c382f0a5346"), "name" : "Allan", "phoneNumber" : 5125551212, "timeBand" : [ { "startHour" : 0, "endHour" : 6, "_id" : ObjectId("5849fad175944c382f0a5349"), "event" : [ { "type" : "low", "glucose" : 80, "action" : "call", "repeat" : 900000, "_id" : ObjectId("5849fad175944c382f0a534b") }, { "type" : "high", "glucose" : 250, "action" : "text", "repeat" : 900000, "_id" : ObjectId("5849fad175944c382f0a534a") } ], "endMinute" : 0, "startMinute" : 0 }, { "startHour" : 6, "endHour" : 12, "_id" : ObjectId("5849fad175944c382f0a5347"), "event" : [ { "type" : "high", "glucose" : 300, "action" : "call", "repeat" : 900000, "_id" : ObjectId("5849fad175944c382f0a5348") } ], "endMinute" : 0, "startMinute" : 0 } ], "includeWeekendsAndHolidays" : false, "expirationDate" : 253402322399000, "__v" : 0 }
+     { "_id" : ObjectId("5849fad275944c382f0a535e"), "name" : "Julie", "phoneNumber" : 4155551212, "timeBand" : [ { "startHour" : 22, "endHour" : 23, "_id" : ObjectId("5849fad275944c382f0a535f"), "event" : [ { "type" : "low", "glucose" : 80, "action" : "call", "repeat" : 900000, "_id" : ObjectId("5849fad275944c382f0a5364") }, { "type" : "high", "glucose" : 280, "action" : "call", "repeat" : 900000, "_id" : ObjectId("5849fad275944c382f0a5363") }, { "type" : "double up", "action" : "call", "repeat" : 900000, "_id" : ObjectId("5849fad275944c382f0a5362") }, { "type" : "double down", "action" : "call", "repeat" : 900000, "_id" : ObjectId("5849fad275944c382f0a5361") }, { "type" : "no data", "action" : "call", "noDataTime" : 1800000, "repeat" : 1800000, "_id" : ObjectId("5849fad275944c382f0a5360") } ], "endMinute" : 59, "startMinute" : 0 }, { "startHour" : 0, "endHour" : 6, "_id" : ObjectId("5849fad275944c382f0a5365"), "event" : [ { "type" : "low", "glucose" : 80, "action" : "call", "repeat" : 900000, "_id" : ObjectId("5849fad275944c382f0a5364") }, { "type" : "high", "glucose" : 280, "action" : "call", "repeat" : 900000, "_id" : ObjectId("5849fad275944c382f0a5363") }, { "type" : "double up", "action" : "call", "repeat" : 900000, "_id" : ObjectId("5849fad275944c382f0a5362") }, { "type" : "double down", "action" : "call", "repeat" : 900000, "_id" : ObjectId("5849fad275944c382f0a5361") }, { "type" : "no data", "action" : "call", "noDataTime" : 1800000, "repeat" : 1800000, "_id" : ObjectId("5849fad275944c382f0a5360") } ], "endMinute" : 0, "startMinute" : 0 } ], "includeWeekendsAndHolidays" : true, "expirationDate" : 253402322399000, "__v" : 0 }
+     { "_id" : ObjectId("5849fad275944c382f0a5366"), "name" : "Jenny", "phoneNumber" : 3128675309, "timeBand" : [ { "startHour" : 0, "endHour" : 6, "_id" : ObjectId("5849fad275944c382f0a5367"), "event" : [ { "type" : "low", "glucose" : 80, "action" : "call", "repeat" : 900000, "_id" : ObjectId("5849fad275944c382f0a5368") } ], "endMinute" : 0, "startMinute" : 0 }, { "startHour" : 10, "endHour" : 12, "_id" : ObjectId("5849fad275944c382f0a5375"), "event" : [ { "type" : "low", "glucose" : 80, "action" : "text", "repeat" : 900000, "_id" : ObjectId("5849fad275944c382f0a5376") }, { "type" : "high", "glucose" : 250, "action" : "text", "repeat" : 900000, "_id" : ObjectId("5849fad275944c382f0a5377") } ], "endMinute" : 0, "startMinute" : 0 } ], "includeWeekendsAndHolidays" : true, "expirationDate" : 253402322399000, "__v" : 1 }
+     { "_id" : ObjectId("5849fad275944c382f0a537b"), "name" : "Laura", "phoneNumber" : 2068675309, "timeBand" : [ { "startHour" : 0, "endHour" : 6, "_id" : ObjectId("5849fad275944c382f0a537c"), "event" : [ { "type" : "low", "glucose" : 80, "action" : "call", "repeat" : 900000, "_id" : ObjectId("5849fad275944c382f0a537d") } ], "endMinute" : 0, "startMinute" : 0 } ], "includeWeekendsAndHolidays" : true, "expirationDate" : 1481349599000, "__v" : 0 }
+     */
+
+    describe('Send messages', function () {
+        it('Should send a message to followers with an event type of low if the BG is below the glucose level specified in the event', function (done) {
+            //Send a date of next Monday 3AM with a glucose of 70
+            //Based on the sample users that are set up Allan, Julie, and Jenny should receive the message
+            //The total count of messages should be 3
+            console.log(nextNonHolidayMonday);
+            var copy = new moment(nextNonHolidayMonday);
+            var fiveMinutesAgo = copy.add(-5, "minutes");
+            dex.setLastEntry(fiveMinutesAgo);
+            messenger.sendMessages(parseInt(nextNonHolidayMonday.format('x')), 70, 4, function (m) {
+                m.followersNotified.length.should.equal(3);
+                done();
+            });
+        });
+
+        it('Should send a message to followers with an event type of high if the BG is above the glucose level specified in the event', function (done) {
+            //We have 3 messages so far, let's send a high BG on the same date/time, we should get 2 more messages during this time period
+            var copy = new moment(nextNonHolidayMonday);
+            var fiveMinutesAgo = copy.add(-5, "minutes");
+            dex.setLastEntry(fiveMinutesAgo);
+            messenger.sendMessages(parseInt(nextNonHolidayMonday.format('x')), 300, 4, function (m) {
+                m.followersNotified.length.should.equal(3); //Getting two messages for Alan cuz he has a timeband that ends at exactly 6am and starts at 6am... really edge casey
+                done();
+            });
+        });
+        it('Should send a message to followers if they have an event of type double up when a double up happens', function (done) {
+            //For those playing at home, we have 5 messages if we use the same time period, and send an event type of double up, we get 1 more message
+            messenger.sendMessages(parseInt(nextNonHolidayMonday.format('x')), 150, 1, function (m) {
+                //The third parameter of 1 indicates double up
+                m.followersNotified.length.should.equal(1);
+                done();
+            });
+        });
+        it('Should send a message to followers if they have an event of type double down when a double down happens', function (done) {
+            //Starting with an assumed 6 messages, sending a double down should result in 1 more...
+            messenger.sendMessages(parseInt(nextNonHolidayMonday.format('x')), 150, 7, function (m) {
+                m.followersNotified.length.should.equal(1);
+                //The third parameter of 1 indicates double up
+                done();
+            });
+        });
+        it('Should send a message to followers if they have an event type of no data and there has been no data for the specified amount of time', function (done) {
+            //Let's set the last known entry in the DexData to forty five minutes ago, then send an event in...
+            var copy = new moment(nextNonHolidayMonday);
+            var fortyFiveMinutesAgo = copy.add(-45, 'minutes');
+            dex.setLastEntry(fortyFiveMinutesAgo);
+            messenger.sendMessages(parseInt(nextNonHolidayMonday.format('x')), 150, 5, function (m) {
+                m.followersNotified.length.should.equal(1);
+                done();
+            })
+        });
+        it('Should not send a message until the time elapsed is greater than the time specified in the repeat of the event', function (done) {
+            //We have 8 messages so far, let's repeat the first message two minutes later
+            var copy = new moment(nextNonHolidayMonday);
+            var twoMinutesLater = copy.add(2, 'minutes');
+            copy = new moment(nextNonHolidayMonday);
+            var fiveMinutesAgo = copy.add(-5, 'minutes');
+            dex.setLastEntry(fiveMinutesAgo);
+            messenger.sendMessages(parseInt(twoMinutesLater.format('x')), 70, 4, function (m) {
+                m.followersNotified.length.should.equal(0);
+                done();
+            })
+        });
+        it('Should only send a message to followers who have includeWeekendsAndHolidays if the event happens on a weekend.', function (done) {
+            //Still at 8 messages, let's send the first event on a Sunday and we should get two more as Allan is excluded
+            var copy = new moment(nextNonHolidayMonday);
+            var anyGivenSunday = copy.add(13, 'day'); //making it the day before any Monday made it fail when testing on Sunday, making it the Sunday after me day
+            var copy2 = anyGivenSunday;
+            var fiveMinutesPrior = copy2.add(-5, 'minutes');
+            dex.setLastEntry(fiveMinutesPrior);
+            messenger.sendMessages(parseInt(anyGivenSunday.format('x')), 70, 4, function (m) {
+                m.followersNotified.length.should.equal(2);
+                done();
+            })
+        });
+        it('Should only send a message to followers who have includeWeekendsAndHolidays if the event happens on a vacation period.', function (done) {
+            //we know that my fav holiday, me day, is exactly a week from the first non holiday monday, Alan will not get a message on me day, so vis a vi ergo, we should get two more messages if we have a low at 6am on me day
+            var copy = new moment(nextNonHolidayMonday);
+            var meDay = copy.add(7, 'days');
+            var copy = new moment(nextNonHolidayMonday);
+            var fiveMinutesAgo = copy.add(-5, 'minutes');
+            dex.setLastEntry(fiveMinutesAgo);
+            messenger.sendMessages(parseInt(meDay.format('x')), 70, 4, function (m) {
+                m.followersNotified.length.should.equal(3); //Getting two messages for Alan cuz he has a timeband that ends at exactly 6am and starts at 6am... really edge casey
+                done();
+            })
+        });
+        it('Should not send a message to a follower that has expired', function (done) {
+            console.log('The test cases above assume the follower created as Laura expired already');
+            done();
+        });
+    });
+
+});

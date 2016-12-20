@@ -9,6 +9,7 @@
   "author": "Evan Zlotnick",
   "license": "ISC",
   "dependencies": {
+    "async": "^2.1.4",
     "body-parser": "^1.15.1",
     "chai": "^3.5.0",
     "chai-http": "^3.0.0",
@@ -25,6 +26,7 @@
     "passport": "^0.3.2",
     "passport-http-bearer": "^1.0.1",
     "superagent": "^2.0.0",
-    "sys": "0.0.1"
+    "sys": "0.0.1",
+    "twilio": "^2.11.1"
   }
 }

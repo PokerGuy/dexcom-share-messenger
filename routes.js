@@ -8,6 +8,7 @@ var secure = require('./controllers/secure');
 var vacation = require('./controllers/vacation');
 var follower = require('./controllers/follower');
 var auth = require('./auth');
+var twiml = require('./controllers/twiml');
 var router = express.Router();
 
 router.get('/', readings.index);
@@ -27,4 +28,5 @@ router.post('/follower/:followerId/timeband/:timebandId/event', auth.isAuthentic
 router.delete('/follower/:followerId/timeband/:timebandId', auth.isAuthenticated, follower.deleteTimeBand);
 router.delete('/follower/:followerId/timeband/:timebandId/event/:eventId', auth.isAuthenticated, follower.deleteEvent);
 router.get('/follower', auth.isAuthenticated, follower.index);
+router.post('/twiml', twiml.sendPhoneCall);
 module.exports = router;

@@ -1,4 +1,5 @@
 var mongoose = require('mongoose');
+var Schema = mongoose.Schema;
 var moment = require('moment-timezone');
 var minlength = [2, 'The value of path `{PATH}` (`{VALUE}`) is shorter than the minimum allowed length ({MINLENGTH}).'];
 var _ = require('lodash');
@@ -27,7 +28,8 @@ var eventSchema = new mongoose.Schema({
     repeat: {
         type: Number,
         required: true,
-        min: [300000, "Must be greater than five minutes"]
+        min: [300000, "Must be greater than five minutes"],
+        max: [7200000, "Cannot be greater than two hours"]
     }
 });
 
@@ -73,8 +75,8 @@ var FollowerSchema = new mongoose.Schema({
         required: true
     },
     expirationDate: {
-        type: Date,
-        default: new Date('12/31/9999')
+        type: Number,
+        default: new Date('12/30/9999').getTime()
     },
     includeWeekendsAndHolidays: {
         type: Boolean,
@@ -129,12 +131,7 @@ FollowerSchema.pre('save', function (next) {
                 next(err);
             }
         }
-        var expDate = new Date(follower.expirationDate);
-        expDate.setHours(23);
-        expDate.setMinutes(59);
-        expDate.setSeconds(59);
-        follower.expirationDate = new Date(moment.tz(expDate, process.env.TZ).format()).getTime();
-        if (expDate.getTime() < new Date().getTime()) {
+        if (follower.expirationDate < new Date().getTime()) {
             var err = new Error('The expiration date must be in the future');
             next(err);
         }
@@ -142,11 +139,11 @@ FollowerSchema.pre('save', function (next) {
     }
 });
 
-FollowerSchema.post('save', function(doc) {
+FollowerSchema.post('save', function (doc) {
     secureupdate.doUpdate('newfollower', doc);
 });
 
-FollowerSchema.post('remove', function(doc) {
+FollowerSchema.post('remove', function (doc) {
     secureupdate.doUpdate('deletefollower', {id: doc._id});
 });
 

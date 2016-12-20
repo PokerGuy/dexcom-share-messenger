@@ -31,6 +31,7 @@ var VacationSchema = new mongoose.Schema({
 });
 
 VacationSchema.pre('validate', function(next) {
+    console.log('i am prevalidating!');
     var start = this._doc.startDate;
     start = new Date(start);
     start.setHours(0);

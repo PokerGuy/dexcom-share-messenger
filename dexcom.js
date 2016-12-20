@@ -4,9 +4,19 @@ var dexData = require('./dexData');
 var moment = require('moment-timezone');
 var Reading = require('./models/reading');
 var session;
+var messenger = require('./messenger');
+var moment = require('moment');
 
 exports.login = function() {
-    doLogin()
+    doLogin(function(success, s) {
+        if (success) {
+            session = s;
+            console.log('Success reaching dexcom');
+            polling();
+        } else {
+            relogin();
+        }
+    })
 };
 
 function doLogin(cb) {
@@ -25,15 +35,8 @@ function doLogin(cb) {
                 console.log('Error');
                 console.log(err);
                 console.log('Response ');
-                if (cb) {
-                    cb(err, res);
-                } else {
-                    relogin();
-                }
             } else {
-                session = res.body;
-                console.log('Success reaching dexcom');
-                polling();
+                cb(true, res.body);
             }
         });
 };
@@ -56,7 +59,7 @@ function polling() {
                 nextCall = new Date(now + 30000);
                 update.doUpdate('no data');
             } else {
-                dexData.setLastEntry(moment.tz(result.time, "America/Chicago").format());
+                dexData.setLastEntry(moment.tz(result.time, process.env.TZ).format());
                 update.setLastEntry(dexData.lastEntry);
                 console.log('Last reading at ' + dexData.lastEntry);
                 console.log(dexData.next + ' milliseconds until next call.');
@@ -64,6 +67,9 @@ function polling() {
                 nextCall = new Date(now + dexData.next);
                 Reading.addReading(result.time, dexData.glucose);
                 update.doUpdate('regular update', dexData.glucose, dexData.trend, dexData.next);
+                messenger.sendMessages(Date.now(),dexData.glucose, dexData.trend, function(msg) {
+                    console.log('Alerts should have been sent to ' + msg.followersNotified.length + ' people.');
+                })
             }
         }
     });

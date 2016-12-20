@@ -24,7 +24,7 @@ var options = {
     server: {socketOptions: {keepAlive: 300000, connectTimeoutMS: 30000}},
     replset: {socketOptions: {keepAlive: 300000, connectTimeoutMS: 30000}}
 };
-if (process.env.NODE_ENV !== 'testing') {
+if (process.env.NODE_ENV != 'testing') {
     //We establish a connection in the test to start with a clean database
     //Also, all readings are simulated
     dexcom.login();

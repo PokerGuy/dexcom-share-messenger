@@ -27,7 +27,6 @@ exports.create = function(req, res) {
 };
 
 exports.delete = function(req, res) {
-    console.log(req.params.id);
     Vacation.findOneAndRemove({_id: req.params.id}, function(err, v) {
         if (v) {
             v.remove();

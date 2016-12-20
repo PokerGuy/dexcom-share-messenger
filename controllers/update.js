@@ -3,12 +3,10 @@ var clientId = 0;
 var lastEntry;
 
 exports.setLastEntry = function(last) {
-    console.log(last);
     lastEntry = last;
 };
 
 exports.update = function(req, res) {
-    console.log('update called');
     req.socket.setTimeout(0);
     res.writeHead(200, {
         'Content-Type': 'text/event-stream',
@@ -28,7 +26,6 @@ exports.update = function(req, res) {
     (function (clientId) {
         clients[clientId] = res;
         req.on('close', function () {
-            console.log('later skater');
             delete clients[clientId]
         });
     })(++clientId)
@@ -36,7 +33,6 @@ exports.update = function(req, res) {
 
 exports.doUpdate = function(type, glucose, trend, next) {
     var event;
-    console.log(lastEntry);
     var last = new Date(lastEntry);
     if (type === 'regular update') {
         event = "event: update\n";

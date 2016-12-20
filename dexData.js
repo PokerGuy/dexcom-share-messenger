@@ -3,6 +3,7 @@ var dexData = module.exports = {
     trend: null,
     lastEntry: null,
     next: null,
+    eventType: null,
     setGlucose: function(g) {
         dexData.glucose = g;
     },
@@ -14,5 +15,8 @@ var dexData = module.exports = {
     },
     setNext: function(n) {
         dexData.next = n;
+    },
+    setEventType: function(et) {
+        dexData.eventType = et;
     }
 };
