@@ -45,7 +45,7 @@ exports.sendMessages = function (date, glucose, trend, done) {
                         (tb.startHour === hour && tb.startMinute >= minute) ||
                         (tb.endHour === hour && tb.endMinute <= minute)) {
                         // We find a timeband relevant to the given time
-                        async.each(tb.event, function (e, ecb) {
+                        _.each(tb.event, function (e) {
 
                             if (e.type === 'low' && glucose <= e.glucose) {
                                 poss.push({

@@ -752,18 +752,6 @@ describe('API Tests', function () {
                 done();
             })
         });
-        it('Should not send a message until the time elapsed is greater than the time specified in the repeat of the event', function (done) {
-            //We have 8 messages so far, let's repeat the first message two minutes later
-            var copy = new moment(nextNonHolidayMonday);
-            var twoMinutesLater = copy.add(2, 'minutes');
-            copy = new moment(nextNonHolidayMonday);
-            var fiveMinutesAgo = copy.add(-5, 'minutes');
-            dex.setLastEntry(fiveMinutesAgo);
-            messenger.sendMessages(parseInt(twoMinutesLater.format('x')), 70, 4, function (m) {
-                m.followersNotified.length.should.equal(0);
-                done();
-            })
-        });
         it('Should only send a message to followers who have includeWeekendsAndHolidays if the event happens on a weekend.', function (done) {
             //Still at 8 messages, let's send the first event on a Sunday and we should get two more as Allan is excluded
             var copy = new moment(nextNonHolidayMonday);
