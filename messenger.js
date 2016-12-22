@@ -122,7 +122,7 @@ exports.sendMessages = function (date, glucose, trend, done) {
                         eventType: {$in: [msg.eventType]}
                     }).limit(1).sort({dateTime: -1}).exec(function (err, m) {
                         if (m.length == 1) {
-                            if ((date - m.dateTime) > msg.repeat) {
+                            if ((date - m.dateTime) < msg.repeat) {
                                 message.followersNotified.push({follower: msg.followerId, action: msg.action});
                             }
                         } else {
