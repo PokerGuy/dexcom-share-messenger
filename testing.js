@@ -2,16 +2,20 @@ var async = require('async');
 
 async.series([
     function(done) {
-        setTimeout(function() {
-            console.log('first thing');
+        async.each([1,2,3,4,5,6,7,8,9,10], function(item, callback) {
+            setTimeout(function () {
+                console.log(item);
+                callback();
+            }, 3000)
+        }, function(err) {
             done();
-        }, 2000);
+        })
     },
     function(done) {
         setTimeout(function() {
             console.log('second thing');
             done();
-        }, 500);
+        }, 3000);
     },
     function(done) {
         setTimeout(function() {

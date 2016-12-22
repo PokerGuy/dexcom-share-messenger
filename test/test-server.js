@@ -768,6 +768,7 @@ describe('API Tests', function () {
             //Still at 8 messages, let's send the first event on a Sunday and we should get two more as Allan is excluded
             var copy = new moment(nextNonHolidayMonday);
             var anyGivenSunday = copy.add(13, 'day'); //making it the day before any Monday made it fail when testing on Sunday, making it the Sunday after me day
+            anyGivenSunday.add(-3, 'hours');
             var copy2 = anyGivenSunday;
             var fiveMinutesPrior = copy2.add(-5, 'minutes');
             dex.setLastEntry(fiveMinutesPrior);

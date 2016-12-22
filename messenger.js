@@ -30,6 +30,7 @@ exports.sendMessages = function (date, glucose, trend, done) {
             var dow = new moment.tz(date, process.env.TZ).get('day');
             if (dow === 0 || dow === 6 || vacaInd > 0) {
                 params = {expirationDate: {$gt: date}, includeWeekendsAndHolidays: {$eq: true}};
+                showFollowers = true;
             }
             follower.find(params, function (err, f) {
                 cb(null, f);
@@ -37,66 +38,104 @@ exports.sendMessages = function (date, glucose, trend, done) {
         },
         function (followers, cb) {
             //Have an array of followers who have not expired and filtered based on whether they should receive alerts on weekends and holidays if indeed it is a weekend or holiday
-            var message = new Message({eventType: [], followersNotified: [], acknowledged: false});
+            var poss = [];
             _.each(followers, function (follower) {
                 _.each(follower.timeBand, function (tb) {
                     if ((tb.startHour < hour && tb.endHour > hour) ||
                         (tb.startHour === hour && tb.startMinute >= minute) ||
                         (tb.endHour === hour && tb.endMinute <= minute)) {
                         // We find a timeband relevant to the given time
-                        _.each(tb.event, function (e) {
-                            var found = false;
+                        async.each(tb.event, function (e, ecb) {
 
                             if (e.type === 'low' && glucose <= e.glucose) {
-                                if (message.eventType.indexOf('low') === -1) {
-                                    message.eventType.push('low');
-                                }
-                                message.followersNotified.push({follower: follower._id, action: e.action});
-                                found = true;
+                                poss.push({
+                                    eventType: 'low',
+                                    followerId: follower._id,
+                                    repeat: follower.repeat,
+                                    action: e.action
+                                });
                             }
 
                             if (e.type === 'high' && glucose >= e.glucose) {
-                                if (message.eventType.indexOf('high') === -1) {
-                                    message.eventType.push('high');
-                                }
-                                message.followersNotified.push({follower: follower._id, action: e.action});
-                                found = true;
+                                poss.push({
+                                    eventType: 'high',
+                                    followerId: follower._id,
+                                    repeat: follower.repeat,
+                                    action: e.action
+                                });
                             }
 
                             if (e.type === 'double up' && trend === 1) {
-                                if (message.eventType.indexOf('double up') === -1) {
-                                    message.eventType.push('double up');
-                                }
-                                if (!found) {
-                                    message.followersNotified.push({follower: follower._id, action: e.action});
-                                    found = true;
-                                }
+                                poss.push({
+                                    eventType: 'double up',
+                                    followerId: follower._id,
+                                    repeat: follower.repeat,
+                                    action: e.action
+                                });
                             }
 
                             if (e.type === 'double down' && trend === 7) {
-                                if (message.eventType.indexOf('double up') === -1) {
-                                    message.eventType.push('double up');
-                                }
-                                if (!found) {
-                                    message.followersNotified.push({follower: follower._id, action: e.action});
-                                    found = true;
-                                }
+                                poss.push({
+                                    eventType: 'double down',
+                                    followerId: follower._id,
+                                    repeat: follower.repeat,
+                                    action: e.action
+                                });
+
                             }
 
                             if (e.type === 'no data' && (date - dexData.lastEntry) > e.noDataTime) {
-                                if (message.eventType.indexOf('no data') === -1) {
-                                    message.eventType.push('no data');
-                                }
-                                if (!found) {
-                                    message.followersNotified.push({follower: follower._id, action: e.action});
-                                    found = true;
-                                }
+                                poss.push({
+                                    eventType: 'no data',
+                                    followerId: follower._id,
+                                    repeat: follower.repeat,
+                                    action: e.action
+                                });
                             }
                         });
                     }
                 });
             });
-            cb(null, message);
+            cb(null, poss);
+        },
+        function (possMessages, cb) {
+            var message = new Message({eventType: [], followersNotified: [], acknowledged: false});
+            async.each(possMessages, function (msg, callback) {
+                if (msg.eventType == 'low' && message.eventType.indexOf('low') == -1) {
+                    message.eventType.push('low');
+                }
+                if (msg.eventType == 'high' && message.eventType.indexOf('high') == -1) {
+                    message.eventType.push('high');
+                }
+                if (msg.eventType == 'double up' && message.eventType.indexOf('double up') == -1) {
+                    message.eventType.push('double up');
+                }
+                if (msg.eventType == 'double down' && message.eventType.indexOf('double down') == -1) {
+                    message.eventType.push('double down');
+                }
+                if (msg.eventType == 'no data' && message.eventType.indexOf('no data') == -1) {
+                    message.eventType.push('no data');
+                }
+                if (message.followersNotified.indexOf({follower: msg.followerId, action: msg.action}) == -1) {
+                    Message.find({
+                        'followersNotified.follower': {$eq: msg.followerId},
+                        eventType: {$in: [msg.eventType]}
+                    }).limit(1).sort({dateTime: -1}).exec(function (err, m) {
+                        if (m.length == 1) {
+                            if ((date - m.dateTime) > msg.repeat) {
+                                message.followersNotified.push({follower: msg.followerId, action: msg.action});
+                            }
+                        } else {
+                            message.followersNotified.push({follower: msg.followerId, action: msg.action});
+                        }
+                        callback();
+                    })
+                } else {
+                    callback();
+                }
+            }, function (err) {
+                cb(null, message);
+            })
         }
     ], function (err, message) {
         // We have done all the iterating in the world, time to save the message and make calls to twilio
