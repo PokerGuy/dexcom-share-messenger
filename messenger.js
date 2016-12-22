@@ -51,7 +51,7 @@ exports.sendMessages = function (date, glucose, trend, done) {
                                 poss.push({
                                     eventType: 'low',
                                     followerId: follower._id,
-                                    repeat: follower.repeat,
+                                    repeat: e.repeat,
                                     action: e.action
                                 });
                             }
@@ -60,7 +60,7 @@ exports.sendMessages = function (date, glucose, trend, done) {
                                 poss.push({
                                     eventType: 'high',
                                     followerId: follower._id,
-                                    repeat: follower.repeat,
+                                    repeat: e.repeat,
                                     action: e.action
                                 });
                             }
@@ -69,7 +69,7 @@ exports.sendMessages = function (date, glucose, trend, done) {
                                 poss.push({
                                     eventType: 'double up',
                                     followerId: follower._id,
-                                    repeat: follower.repeat,
+                                    repeat: e.repeat,
                                     action: e.action
                                 });
                             }
@@ -78,7 +78,7 @@ exports.sendMessages = function (date, glucose, trend, done) {
                                 poss.push({
                                     eventType: 'double down',
                                     followerId: follower._id,
-                                    repeat: follower.repeat,
+                                    repeat: e.repeat,
                                     action: e.action
                                 });
 
@@ -88,7 +88,7 @@ exports.sendMessages = function (date, glucose, trend, done) {
                                 poss.push({
                                     eventType: 'no data',
                                     followerId: follower._id,
-                                    repeat: follower.repeat,
+                                    repeat: e.repeat,
                                     action: e.action
                                 });
                             }
@@ -122,7 +122,12 @@ exports.sendMessages = function (date, glucose, trend, done) {
                         eventType: {$in: [msg.eventType]}
                     }).limit(1).sort({dateTime: -1}).exec(function (err, m) {
                         if (m.length == 1) {
-                            if ((date - m.dateTime) < msg.repeat) {
+                            console.log(m[0]._doc.dateTime.getTime());
+                            console.log('found a previous message');
+                            console.log('date is ' + date);
+                            console.log('The time elapsed is ' + (date - m[0]._doc.dateTime));
+                            console.log('the time required to trigger another event is ' + msg.repeat);
+                            if ((date - m[0]._doc.dateTime) > msg.repeat) {
                                 message.followersNotified.push({follower: msg.followerId, action: msg.action});
                             }
                         } else {
