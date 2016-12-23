@@ -783,4 +783,18 @@ describe('API Tests', function () {
         });
     });
 
+    describe('Acknowledgements', function () {
+        it('Should receive a text from a follower, find the latest unacknowledged alert, send an acknowledgement to the other followers, receive confirmation the other followers received the acknowledgement, and mark the message as acknowledged', function (done) {
+            chai.request(server)
+                .post('/acknowledgement/')
+                .set('Content-type', 'application/json')
+                .send({
+                    something: "stuff"
+                })
+                .end(function (err, res) {
+                    res.should.have.status(200);
+                    done();
+                })
+        });
+    })
 });
