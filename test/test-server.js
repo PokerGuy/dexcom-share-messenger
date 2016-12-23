@@ -781,10 +781,7 @@ describe('API Tests', function () {
             console.log('The test cases above assume the follower created as Laura expired already');
             done();
         });
-    });
-
-    describe('Acknowledgements', function () {
-        it('Should receive a text from a follower, find the latest unacknowledged alert, send an acknowledgement to the other followers, receive confirmation the other followers received the acknowledgement, and mark the message as acknowledged', function (done) {
+        it('It should not accept a post with the account sid', function(done) {
             chai.request(server)
                 .post('/acknowledgement/')
                 .set('Content-type', 'application/json')
@@ -792,9 +789,23 @@ describe('API Tests', function () {
                     something: "stuff"
                 })
                 .end(function (err, res) {
-                    res.should.have.status(200);
+                    res.should.have.status(401);
                     done();
                 })
         });
-    })
+        it('Should allow a post from a validated account sid', function(done) {
+            chai.request(server)
+                .post('/acknowledgement/')
+                .set('Content-type', 'application/json')
+                .send({
+                    AccountSid: process.env.ACCOUNT_SID,
+                    From: '+14155551212'
+                })
+                .end(function (err, res) {
+                    res.should.have.status(200);
+                    done();
+                })
+        })
+    });
+
 });
