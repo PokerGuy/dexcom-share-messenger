@@ -42,8 +42,8 @@ exports.sendMessages = function (date, glucose, trend, done) {
             _.each(followers, function (follower) {
                 _.each(follower.timeBand, function (tb) {
                     if ((tb.startHour < hour && tb.endHour > hour) ||
-                        (tb.startHour === hour && tb.startMinute >= minute) ||
-                        (tb.endHour === hour && tb.endMinute <= minute)) {
+                        (tb.startHour === hour && tb.startMinute <= minute) ||
+                        (tb.endHour === hour && tb.endMinute >= minute)) {
                         // We find a timeband relevant to the given time
                         _.each(tb.event, function (e) {
 
