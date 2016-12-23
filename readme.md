@@ -36,6 +36,7 @@ Now let's download this code and get it going:
 cd ~/
 git clone https://github.com/PokerGuy/dexcom-share-messenger.git
 cd dexcom-share-messenger
+sudo npm install
 </pre></code>
 
 Let's modify the .env file, it will require entries like this shown below. From the ~/dexcom-share-messenger directory, type nano .env  
