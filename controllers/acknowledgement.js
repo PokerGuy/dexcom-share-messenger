@@ -28,7 +28,6 @@ exports.receive = function (req, res) {
                 },
                 function (f, cb) {
                     //Now find the last known message for this follower...
-                    console.log(f._id);
                     message.find({
                         'followersNotified.follower': {$eq: f._id},
                         acknowledged: {$eq: false}
@@ -65,19 +64,15 @@ exports.receive = function (req, res) {
                                 } else {
                                     msgSentTo += ', ' + thisFollower.name;
                                 }
-                                console.log('texting... this follower:');
-                                console.log('f.phoneNumber ' + f.phoneNumber);
-                                console.log('thisFollower.phoneNumber ' + thisFollower.phoneNumber);
-                                console.log(thisFollower);
-                                console.log('the phone number is ' + thisFollower.phoneNumber);
-                                console.log('the body is ' + 'The ' + type + ' event has been acknowledged by ' + f.name);
                                 client.sendMessage({
                                     to: '+1' + thisFollower.phoneNumber.toString(),
                                     from: process.env.TWILIO_NUMBER,
                                     body: 'The ' + type + ' event has been acknowledged by ' + f.name
                                 }, function (err, responseData) {
-                                    console.log('Error from twilio');
-                                    console.log(err);
+                                    if (err) {
+                                        console.log('Error from twilio');
+                                        console.log(err);
+                                    }
                                     done();
                                 })
                             } else {
@@ -93,14 +88,15 @@ exports.receive = function (req, res) {
                 function(msg, msgSentTo, f, cb) {
                     msg.acknowledged = true;
                     msg.save(function(err) {
-                        console.log('updated the msg to acknowledged');
                         if (process.env.NODE_ENV != 'testing') {
                             client.sendMessage({
                                 to: '+1' + f.phoneNumber.toString(),
                                 from: process.env.TWILIO_NUMBER,
                                 body: 'You have sent an acknowledgement to ' + msgSentTo
                             }, function (err, responseData) {
-                                console.log('Error ' + err);
+                                if (err) {
+                                    console.log('Error ' + err);
+                                }
                                 cb(null, 'done');
                             });
                         } else {
@@ -110,9 +106,6 @@ exports.receive = function (req, res) {
                 }
             ],
             function (err, result) {
-                console.log(err);
-                console.log(result);
-                console.log('send the response');
                 res.json({message: "O'tay!"});
             }
         );
