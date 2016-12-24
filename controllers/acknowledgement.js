@@ -57,7 +57,6 @@ exports.receive = function (req, res) {
                         type = msg.eventType[0] + ' and ' + msg.eventType[1]; //OK, this is hack but there really shouldn't be a high AND a low on the same message, the reality is there could be a low and double down event so I'm not going to iterate here even though I could
                     }
                     async.each(msg.followersNotified, function(follower, done) {
-                        console.log(follower);
                         if (process.env.NODE_ENV != 'testing') {
                             if (follower._id != f._id) {
                                 if (msgSentTo.length == 0) {
@@ -67,6 +66,8 @@ exports.receive = function (req, res) {
                                 }
                                 console.log('texting... this follower:');
                                 console.log(follower);
+                                console.log('the phone number is ' + follower.phoneNumber);
+                                console.log('the body is ' + 'An acknowledgement of the ' + type + ' event has been acknowledged by ' + f.name);
                                 client.sendMessage({
                                     to: '+1' + follower.phoneNumber.toString(),
                                     from: process.env.TWILIO_NUMBER,
@@ -74,10 +75,10 @@ exports.receive = function (req, res) {
                                 }, function (err, responseData) {
                                     console.log('Error from twilio');
                                     console.log(err);
+                                    done();
                                 })
                             }
                         }
-                        done();
                     }, function(err) {
                         cb(null, msg, msgSentTo, f);
                     });
