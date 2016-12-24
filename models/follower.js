@@ -28,7 +28,7 @@ var eventSchema = new mongoose.Schema({
     repeat: {
         type: Number,
         required: true,
-        min: [300000, "Must be greater than five minutes"],
+        min: [240000, "Must be greater than four minutes"],
         max: [7200000, "Cannot be greater than two hours"]
     }
 });
