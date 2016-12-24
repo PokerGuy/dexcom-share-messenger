@@ -59,7 +59,7 @@ exports.receive = function (req, res) {
                     async.each(msg.followersNotified, function(follower, done) {
                         var thisFollower = follower.follower;
                         if (process.env.NODE_ENV != 'testing') {
-                            if (follower._id != f._id) {
+                            if (thisFollower._id != f._id) {
                                 if (msgSentTo.length == 0) {
                                     msgSentTo += thisFollower.name;
                                 } else {
