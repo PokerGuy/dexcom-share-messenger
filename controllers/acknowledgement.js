@@ -57,21 +57,22 @@ exports.receive = function (req, res) {
                         type = msg.eventType[0] + ' and ' + msg.eventType[1]; //OK, this is hack but there really shouldn't be a high AND a low on the same message, the reality is there could be a low and double down event so I'm not going to iterate here even though I could
                     }
                     async.each(msg.followersNotified, function(follower, done) {
+                        var thisFollower = follower.follower;
                         if (process.env.NODE_ENV != 'testing') {
                             if (follower._id != f._id) {
                                 if (msgSentTo.length == 0) {
-                                    msgSentTo += follower.name;
+                                    msgSentTo += thisFollower.name;
                                 } else {
-                                    msgSentTo += ', ' + follower.name;
+                                    msgSentTo += ', ' + thisFollower.name;
                                 }
                                 console.log('texting... this follower:');
-                                console.log(follower);
-                                console.log('the phone number is ' + follower.phoneNumber);
-                                console.log('the body is ' + 'An acknowledgement of the ' + type + ' event has been acknowledged by ' + f.name);
+                                console.log(thisFollower);
+                                console.log('the phone number is ' + thisFollower.phoneNumber);
+                                console.log('the body is ' + 'The ' + type + ' event has been acknowledged by ' + f.name);
                                 client.sendMessage({
-                                    to: '+1' + follower.phoneNumber.toString(),
+                                    to: '+1' + thisFollower.phoneNumber.toString(),
                                     from: process.env.TWILIO_NUMBER,
-                                    body: 'An acknowledgement of the ' + type + ' event has been acknowledged by ' + f.name
+                                    body: 'The ' + type + ' event has been acknowledged by ' + f.name
                                 }, function (err, responseData) {
                                     console.log('Error from twilio');
                                     console.log(err);
@@ -86,6 +87,7 @@ exports.receive = function (req, res) {
                 function(msg, msgSentTo, f, cb) {
                     msg.acknowledged = true;
                     msg.save(function(err) {
+                        console.log('updated the msg to acknowledged');
                         if (process.env.NODE_ENV != 'testing') {
                             client.sendMessage({
                                 to: '+1' + f.phoneNumber.toString(),
