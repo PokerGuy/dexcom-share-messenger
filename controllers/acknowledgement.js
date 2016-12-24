@@ -57,20 +57,24 @@ exports.receive = function (req, res) {
                     }
                     async.each(msg.followersNotified, function(follower, done) {
                         console.log(follower);
-                        if (process.env.NODE_ENV != 'testing' && follower._id != f._id) {
-                            if (msgSentTo.length == 0) {
-                                msgSentTo += follower.name;
-                            } else {
-                                msgSentTo += ', ' +follower.name;
+                        if (process.env.NODE_ENV != 'testing') {
+                            if (follower._id != f._id) {
+                                if (msgSentTo.length == 0) {
+                                    msgSentTo += follower.name;
+                                } else {
+                                    msgSentTo += ', ' + follower.name;
+                                }
+                                console.log('texting... this follower:');
+                                console.log(follower);
+                                client.sendMessage({
+                                    to: '+1' + follower.phoneNumber.toString(),
+                                    from: process.env.TWILIO_NUMBER,
+                                    body: 'An acknowledgement of the ' + type + ' event has been acknowledged by ' + f.name
+                                }, function (err, responseData) {
+                                    console.log('Error from twilio');
+                                    console.log(err);
+                                })
                             }
-                            client.sendMessage({
-                                to: '+1' + follower.phoneNumber.toString(),
-                                from: process.env.TWILIO_NUMBER,
-                                body: 'An acknowledgement of the ' + type + ' event has been acknowledged by ' + f.name
-                            }, function (err, responseData) {
-                                console.log('Error from twilio');
-                                console.log(err);
-                            })
                         }
                         done();
                     }, function(err) {
