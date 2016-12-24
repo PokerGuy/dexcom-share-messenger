@@ -59,15 +59,15 @@ exports.receive = function (req, res) {
                     async.each(msg.followersNotified, function(follower, done) {
                         var thisFollower = follower.follower;
                         if (process.env.NODE_ENV != 'testing') {
-                            if (thisFollower._id != f._id) {
+                            if (thisFollower.phoneNumber != f.phoneNumber) {
                                 if (msgSentTo.length == 0) {
                                     msgSentTo += thisFollower.name;
                                 } else {
                                     msgSentTo += ', ' + thisFollower.name;
                                 }
                                 console.log('texting... this follower:');
-                                console.log('f._id ' + f._id);
-                                console.log('thisFollower._id' + thisFollower._id);
+                                console.log('f.phoneNumber ' + f.phoneNumber);
+                                console.log('thisFollower.phoneNumber ' + thisFollower.phoneNumber);
                                 console.log(thisFollower);
                                 console.log('the phone number is ' + thisFollower.phoneNumber);
                                 console.log('the body is ' + 'The ' + type + ' event has been acknowledged by ' + f.name);
