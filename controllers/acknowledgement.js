@@ -11,6 +11,7 @@ exports.receive = function (req, res) {
                 function (cb) {
                     //Figure out who is sending this message...
                     var phone = parseInt(req.body.From.substring(2, 12));
+                    console.log('received a msg from ' + phone);
                     follower.find({
                         phoneNumber: phone
                     }, function (err, f) {
