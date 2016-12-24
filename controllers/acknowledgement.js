@@ -80,7 +80,11 @@ exports.receive = function (req, res) {
                                     console.log(err);
                                     done();
                                 })
+                            } else {
+                                done();
                             }
+                        } else {
+                            done();
                         }
                     }, function(err) {
                         cb(null, msg, msgSentTo, f);
