@@ -52,13 +52,16 @@ function polling() {
             dexData.setTrend(result.trend);
             var now = new Date();
             var timeElapsed = now - result.time;
-            dexData.setNext(300000 - timeElapsed + 60000);
-            if (dexData.next < 0) {
+            if ((300000 - timeElapsed + 60000) < 0) {
                 console.log('New value not available, waiting another 30 seconds');
                 setTimeout(polling, 30000);
                 nextCall = new Date(now + 30000);
                 update.doUpdate('no data');
+                messenger.sendMessages(Date.now(),dexData.glucose, dexData.trend, function(msg) {
+                    console.log('Alerts should have been sent to ' + msg.followersNotified.length + ' people.');
+                })
             } else {
+                dexData.setNext(300000 - timeElapsed + 60000);
                 dexData.setLastEntry(moment.tz(result.time, process.env.TZ).format());
                 update.setLastEntry(dexData.lastEntry);
                 console.log('Last reading at ' + dexData.lastEntry);
