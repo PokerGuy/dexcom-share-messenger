@@ -22,9 +22,6 @@ exports.receive = function (req, res) {
                         //This is coming from a text
                         phone = parseInt(req.body.From.substring(2, 12));
                     }
-                    console.log('received a msg from ' + phone);
-                    console.log('The requet body is:');
-                    console.log(req.body);
                     follower.find({
                         phoneNumber: phone
                     }, function (err, f) {
