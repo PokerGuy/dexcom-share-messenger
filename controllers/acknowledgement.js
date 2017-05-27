@@ -2,7 +2,9 @@ var async = require('async');
 var follower = require('../models/follower');
 var message = require('../models/message');
 var client = require('twilio')(process.env.ACCOUNT_SID, process.env.AUTH_TOKEN);
+var twilio = require('twilio');
 
+var phoneAcknowledgement = false;
 exports.receive = function (req, res) {
     if (req.body.AccountSid != process.env.ACCOUNT_SID) {
         res.status(401).send('Access.... Denied!');
@@ -10,8 +12,17 @@ exports.receive = function (req, res) {
         async.waterfall([
                 function (cb) {
                     //Figure out who is sending this message...
-                    var phone = parseInt(req.body.From.substring(2, 12));
-                    console.log('received a msg from ' + phone); //this is the twilio phone number if coming from a voice response...
+                    var phone = req.body.From;
+                    if (phone == process.env.TWILIO_NUMBER) {
+                        //This is coming from a phone call
+                        phoneAcknowledgement = true;
+                        phone = req.body.Called.substring(2, 12);
+                        //Send a message via twilio to let the user know we are cooking up acknowledgements...
+                    } else {
+                        //This is coming from a text
+                        phone = parseInt(req.body.From.substring(2, 12));
+                    }
+                    console.log('received a msg from ' + phone);
                     console.log('The requet body is:');
                     console.log(req.body);
                     follower.find({
@@ -49,7 +60,7 @@ exports.receive = function (req, res) {
                             }
                         })
                 },
-                function(f, msg, cb) {
+                function (f, msg, cb) {
                     var msgSentTo = '';
                     var type;
                     if (msg.eventType.length == 1) {
@@ -57,7 +68,7 @@ exports.receive = function (req, res) {
                     } else {
                         type = msg.eventType[0] + ' and ' + msg.eventType[1]; //OK, this is hack but there really shouldn't be a high AND a low on the same message, the reality is there could be a low and double down event so I'm not going to iterate here even though I could
                     }
-                    async.each(msg.followersNotified, function(follower, done) {
+                    async.each(msg.followersNotified, function (follower, done) {
                         var thisFollower = follower.follower;
                         if (process.env.NODE_ENV != 'testing') {
                             if (thisFollower.phoneNumber != f.phoneNumber) {
@@ -83,13 +94,13 @@ exports.receive = function (req, res) {
                         } else {
                             done();
                         }
-                    }, function(err) {
+                    }, function (err) {
                         cb(null, msg, msgSentTo, f);
                     });
                 },
-                function(msg, msgSentTo, f, cb) {
+                function (msg, msgSentTo, f, cb) {
                     msg.acknowledged = true;
-                    msg.save(function(err) {
+                    msg.save(function (err) {
                         if (process.env.NODE_ENV != 'testing') {
                             client.sendMessage({
                                 to: '+1' + f.phoneNumber.toString(),
@@ -108,7 +119,17 @@ exports.receive = function (req, res) {
                 }
             ],
             function (err, result) {
-                res.json({message: "O'tay!"});
+                if (phoneAcknowledgement) {
+                    var twiml = new twilio.TwimlResponse();
+                    twiml.say('Thank you for your response.', {
+                        voice: 'woman',
+                        language: 'en-gb'
+                    });
+                    res.type('text/xml');
+                    res.send(twiml.toString());
+                } else {
+                    res.json({message: "O'tay!"});
+                }
             }
         );
     }
