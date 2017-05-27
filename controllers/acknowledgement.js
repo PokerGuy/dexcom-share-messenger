@@ -11,7 +11,9 @@ exports.receive = function (req, res) {
                 function (cb) {
                     //Figure out who is sending this message...
                     var phone = parseInt(req.body.From.substring(2, 12));
-                    console.log('received a msg from ' + phone);
+                    console.log('received a msg from ' + phone); //this is the twilio phone number if coming from a voice response...
+                    console.log('The requet body is:');
+                    console.log(req.body);
                     follower.find({
                         phoneNumber: phone
                     }, function (err, f) {
