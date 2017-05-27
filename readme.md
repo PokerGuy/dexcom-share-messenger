@@ -51,6 +51,8 @@ ACCOUNT_SID=yourTwilioAccountSid
 AUTH_TOKEN=yourTwilioAuthToken
 CHILD_NAME=Zoe
 TWILIO_NUMBER=+1TwilioNumber
+MESSAGE_URL=https://yourdomain.com/api/twiml
+RESPONSE_URL=https://yourdomain.com/api/acknowledgement
 </pre></code>
 
 Now just forever start app.js
