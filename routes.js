@@ -10,6 +10,7 @@ var follower = require('./controllers/follower');
 var auth = require('./auth');
 var twiml = require('./controllers/twiml');
 var acknowledgement = require('./controllers/acknowledgement');
+var history = require('./controllers/history');
 var router = express.Router();
 
 router.get('/', readings.index);
@@ -31,4 +32,5 @@ router.delete('/follower/:followerId/timeband/:timebandId/event/:eventId', auth.
 router.get('/follower', auth.isAuthenticated, follower.index);
 router.post('/twiml', twiml.sendPhoneCall);
 router.post('/acknowledgement', acknowledgement.receive);
+router.get('/history', history.index);
 module.exports = router;

@@ -8,11 +8,11 @@ var should = chai.should();
 var express = require('express');
 var app = express();
 var token = require('../models/token');
+var reading = require('../models/reading');
 var moment = require('moment-timezone');
 var m = require('moment');
 var vacation = require('../models/vacation');
 var follower = require('../models/follower');
-var token = require('../models/token');
 var messenger = require('../messenger');
 var message = require('../models/message');
 var dex = require('../dexData');
@@ -163,7 +163,16 @@ describe('API Tests', function () {
         console.log(moment.tz(today, process.env.TZ).format('HH:mm'));
         findNextNonHolidayMonday(today, function (nonHolidayMonday) {
             nextNonHolidayMonday = nonHolidayMonday.add(-7, 'days');
-            done();
+            var yesterday = new moment.tz(process.env.TZ);
+            yesterday.set({hour: 23, minute: 59, second: 59, millisecond: 0});
+            yesterday = yesterday.add(-1, 'days');
+            reading.create({time: yesterday, glucose: 150}, function(err, r) {
+                console.log('Reading for yesterday created...');
+                reading.create({time: new moment.tz(process.env.TZ), glucose: 100}, function(error, reading) {
+                    console.log('Reading for right now created');
+                    done();
+                })
+            });
         });
     });
 
@@ -498,7 +507,7 @@ describe('API Tests', function () {
                 .end(function (err, res) {
                     res.should.have.status(200);
                     res.body.follower.includeWeekendsAndHolidays.should.equal(true);
-                    var expDate = new Date (parseInt(res.body.follower.expirationDate));
+                    var expDate = new Date(parseInt(res.body.follower.expirationDate));
                     expDate.getFullYear().should.equal(9999);
                     followerId2 = res.body.follower._id;
                     done();
@@ -781,7 +790,7 @@ describe('API Tests', function () {
             console.log('The test cases above assume the follower created as Laura expired already');
             done();
         });
-        it('It should not accept a post with the account sid', function(done) {
+        it('It should not accept a post with the account sid', function (done) {
             chai.request(server)
                 .post('/acknowledgement/')
                 .set('Content-type', 'application/json')
@@ -793,7 +802,7 @@ describe('API Tests', function () {
                     done();
                 })
         });
-        it('Should allow a post from a validated account sid', function(done) {
+        it('Should allow a post from a validated account sid', function (done) {
             chai.request(server)
                 .post('/acknowledgement/')
                 .set('Content-type', 'application/json')
@@ -808,4 +817,46 @@ describe('API Tests', function () {
         })
     });
 
+    describe('Get historical data', function () {
+        it('Should receive an input parameter for the number of days and return an array of readings starting with the number of days since yesterday and ending with ' +
+            '11:59:59PM yesterday', function (done) {
+            chai.request(server)
+                .get('/history')
+                .end(function (err, res) {
+                    res.should.have.status(200);
+                    res.body.errors.should.be.a('array');
+                    done();
+                });
+        });
+        it('Should have a days parameter that is a number', function(done) {
+            chai.request(server)
+                .get('/history')
+                .query({days: 'abcdef'})
+                .end(function (err, res) {
+                    res.should.have.status(200);
+                    res.body.errors.should.be.a('array');
+                    done();
+                })
+        });
+        it('Should have a days parameter that is an integer', function(done) {
+            chai.request(server)
+                .get('/history')
+                .query({days: 80.4})
+                .end(function (err, res) {
+                    res.should.have.status(200);
+                    res.body.errors.should.be.a('array');
+                    done();
+                })
+        });
+        it('Should have a days parameter >=1 and <=90', function(done) {
+            chai.request(server)
+                .get('/history')
+                .query({days: 95})
+                .end(function (err, res) {
+                    res.should.have.status(200);
+                    res.body.errors.should.be.a('array');
+                    done();
+                })
+        });
+    })
 });
