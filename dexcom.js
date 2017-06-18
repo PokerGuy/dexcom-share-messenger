@@ -7,14 +7,15 @@ var session;
 var messenger = require('./messenger');
 var moment = require('moment');
 
-exports.login = function() {
-    doLogin(function(success, s) {
+exports.login = function () {
+    doLogin(function (success, s) {
         if (success) {
             session = s;
             console.log('Success reaching dexcom');
             polling();
         } else {
-            relogin();
+            console.log('Calling relogin');
+            tryAgain();
         }
     })
 };
@@ -34,7 +35,7 @@ function doLogin(cb) {
             if (err) {
                 console.log('Error');
                 console.log(err);
-                console.log('Response ');
+                cb(false);
             } else {
                 cb(true, res.body);
             }
@@ -57,7 +58,7 @@ function polling() {
                 setTimeout(polling, 30000);
                 nextCall = new Date(now + 30000);
                 update.doUpdate('no data');
-                messenger.sendMessages(Date.now(),dexData.glucose, dexData.trend, function(msg) {
+                messenger.sendMessages(Date.now(), dexData.glucose, dexData.trend, function (msg) {
                     console.log('Alerts should have been sent to ' + msg.followersNotified.length + ' people.');
                 })
             } else {
@@ -70,7 +71,7 @@ function polling() {
                 nextCall = new Date(now + dexData.next);
                 Reading.addReading(result.time, dexData.glucose);
                 update.doUpdate('regular update', dexData.glucose, dexData.trend, dexData.next);
-                messenger.sendMessages(Date.now(),dexData.glucose, dexData.trend, function(msg) {
+                messenger.sendMessages(Date.now(), dexData.glucose, dexData.trend, function (msg) {
                     console.log('Alerts should have been sent to ' + msg.followersNotified.length + ' people.');
                 })
             }
@@ -99,15 +100,24 @@ function getGlucose(cb) {
         })
 }
 
+function tryAgain() {
+    console.log('Wait 30 seconds and try again');
+    setTimeout(relogin, 30000);
+}
+
 function relogin() {
-    setTimeout(doLogin(function (err, result) { //this is causing the crash
-        if (err) {
+    console.log('Trying to relogin again...');
+    doLogin(function (success, result) { //this is causing the crash
+        console.log(success);
+        if (!success) {
+            console.log('Try again');
             dexData.setTrend(15);
-            setTimeout(relogin, 240000);
+            tryAgain();
             //Notify the user somehow? Unable to get a login...
         } else {
+            console.log('OK, reconnected to Dexcom');
             session = result.session;
             polling();
         }
-    }), 240000);
+    });
 }

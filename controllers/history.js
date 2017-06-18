@@ -23,14 +23,14 @@ exports.index = function (req, res) {
 };
 
 function getReadings(numDays, cb) {
-    //Send back the newest first...
+    //Send back the oldest first...
     var yesterday = new moment.tz(process.env.TZ);
     yesterday.set({hour: 23, minute: 59, second: 59, millisecond: 0});
     yesterday = yesterday.add(-1, 'days');
     var startDay = new moment.tz(process.env.TZ);
     startDay = startDay.add(-1 * numDays, 'days');
     startDay.set({hour: 0, minute: 0, second: 0, millisecond: 0});
-    Reading.find({time: {$gte: startDay, $lte: yesterday}}).sort({time: -1}).exec(function (err, readings) {
+    Reading.find({time: {$gte: startDay, $lte: yesterday}}).sort({time: 1}).exec(function (err, readings) {
         var r = [];
         for (var x = 0; x < readings.length; x++) {
             r.push(readings[x]._doc);
