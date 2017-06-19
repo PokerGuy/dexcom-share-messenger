@@ -40,7 +40,7 @@ function doLogin(cb) {
                 cb(true, res.body);
             }
         });
-};
+}
 
 function polling() {
     console.log('Now in the polling function...');
@@ -107,7 +107,7 @@ function tryAgain() {
 
 function relogin() {
     console.log('Trying to relogin again...');
-    doLogin(function (success, result) { //this is causing the crash
+    doLogin(function (success, result) {
         console.log(success);
         if (!success) {
             console.log('Try again');
@@ -116,7 +116,7 @@ function relogin() {
             //Notify the user somehow? Unable to get a login...
         } else {
             console.log('OK, reconnected to Dexcom');
-            session = result.session;
+            session = result;
             polling();
         }
     });
