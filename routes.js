@@ -11,6 +11,7 @@ var auth = require('./auth');
 var twiml = require('./controllers/twiml');
 var acknowledgement = require('./controllers/acknowledgement');
 var history = require('./controllers/history');
+var demo = require('./controllers/demo');
 var router = express.Router();
 
 router.get('/', readings.index);
@@ -33,4 +34,5 @@ router.get('/follower', auth.isAuthenticated, follower.index);
 router.post('/twiml', twiml.sendPhoneCall);
 router.post('/acknowledgement', acknowledgement.receive);
 router.get('/history', history.index);
+router.get('/demo', demo.index);
 module.exports = router;
