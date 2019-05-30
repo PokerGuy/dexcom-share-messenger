@@ -6,6 +6,8 @@ var twilio = require('twilio');
 
 var phoneAcknowledgement = false;
 exports.receive = function (req, res) {
+    console.log("Received from Twilio:");
+    console.log(JSON.stringify(req, null, 2));
     if (req.body.AccountSid != process.env.ACCOUNT_SID) {
         res.status(401).send('Access.... Denied!');
     } else {
