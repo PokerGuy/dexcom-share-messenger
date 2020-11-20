@@ -21,7 +21,7 @@
     "lodash": "^4.13.1",
     "moment": "^2.16.0",
     "moment-timezone": "^0.5.4",
-    "mongoose": "^5.10.15",
+    "mongoose": "^5.7.5",
     "node-uuid": "^1.4.7",
     "passport": "^0.3.2",
     "passport-http-bearer": "^1.0.1",
