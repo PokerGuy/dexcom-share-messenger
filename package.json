@@ -9,7 +9,7 @@
   "author": "Evan Zlotnick",
   "license": "ISC",
   "dependencies": {
-    "async": "^2.1.4",
+    "async": "^3.2.2",
     "body-parser": "^1.15.1",
     "chai": "^3.5.0",
     "chai-http": "^3.0.0",
